@@ -27,6 +27,7 @@ import {
 import { CONTAS_DE_DEMONSTRACAO, prepararDadosDeDemonstracao } from './infra/dadosDeDemonstracao';
 import { INTERVALOS_DO_CESAR } from './infra/intervalosDoCesar';
 import { NotificadorComposto } from './infra/notificadores';
+import { NotificadorDoNavegador } from './infra/NotificadorDoNavegador';
 import { RelogioDoSistema } from './infra/RelogioDoSistema';
 import { App } from './ui/App';
 import type { Tela } from './ui/Tela';
@@ -48,7 +49,7 @@ const usuarios = new RepositorioDeUsuariosLocal();
 const sessao = new SessaoDaAba();
 const relogio = new RelogioDoSistema();
 const caixaDeAvisos = new CaixaDeAvisosLocal();
-const notificador = new NotificadorComposto([caixaDeAvisos]);
+const notificador = new NotificadorComposto([caixaDeAvisos, new NotificadorDoNavegador()]);
 
 // Acesso (todos)
 const autenticacao = new Autenticacao(usuarios, sessao);
