@@ -12,6 +12,7 @@ import { ConfigurarCantina } from './aplicacao/cantina/ConfigurarCantina';
 import { EstoqueDaCantina } from './aplicacao/cantina/EstoqueDaCantina';
 import { GerenciarCardapio } from './aplicacao/cantina/GerenciarCardapio';
 import { PainelDaCantina } from './aplicacao/cantina/PainelDaCantina';
+import { PrevisaoPelosAgendados } from './aplicacao/cantina/PrevisaoPelosAgendados';
 import { ReporEstoque } from './aplicacao/cantina/ReporEstoque';
 import { CadastrarCantina } from './aplicacao/cesar/CadastrarCantina';
 import { VisaoGeralDasCantinas } from './aplicacao/cesar/VisaoGeralDasCantinas';
@@ -24,6 +25,7 @@ import {
   RepositorioDePedidosLocal, RepositorioDeProdutosLocal, RepositorioDeUsuariosLocal, SessaoDaAba,
 } from './infra/armazenamentoLocal';
 import { CONTAS_DE_DEMONSTRACAO, prepararDadosDeDemonstracao } from './infra/dadosDeDemonstracao';
+import { INTERVALOS_DO_CESAR } from './infra/intervalosDoCesar';
 import { NotificadorComposto } from './infra/notificadores';
 import { RelogioDoSistema } from './infra/RelogioDoSistema';
 import { App } from './ui/App';
@@ -61,6 +63,7 @@ const estoqueDaCantina = new EstoqueDaCantina(produtos, movimentacoes, relogio);
 const reporEstoque = new ReporEstoque(produtos, estoqueDaCantina);
 const painelDaCantina = new PainelDaCantina(pedidos, notificador, estoqueDaCantina);
 const configurarCantina = new ConfigurarCantina(cantinas);
+const previsaoDoPico = new PrevisaoPelosAgendados(pedidos, INTERVALOS_DO_CESAR, relogio);
 // Estudante
 const consultarCantinas = new ConsultarCantinas(cantinas, produtos, pedidos);
 const agendarCompra = new AgendarCompra(produtos, pedidos, relogio);
@@ -88,7 +91,7 @@ function criarTela(usuario: Usuario | undefined): Tela {
     case 'cantina':
       return new TelaCantina({
         usuario, painel: painelDaCantina, cardapio: gerenciarCardapio, estoque: estoqueDaCantina, repor: reporEstoque,
-        cadastrar: cadastrarProduto, configurar: configurarCantina, relogio,
+        cadastrar: cadastrarProduto, configurar: configurarCantina, previsao: previsaoDoPico, relogio,
       });
     case 'estudante':
       return new TelaEstudante({

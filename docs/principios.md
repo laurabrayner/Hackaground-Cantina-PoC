@@ -55,6 +55,20 @@ src/
 | **Demeter** | `Produto.nivelDeEstoque()`, `Produto.reposicaoNecessaria()`, `Produto.darBaixa()` | Ninguém escreve `produto.politica.algo()`: quem usa conversa só com `Produto`. |
 | **Integridade conceitual** | Vocabulário único em código, telas e diagrama | Os três acessos têm os mesmos nomes em todo lugar (`cesar`, `cantina`, `estudante`), e as classes usam as palavras da cantina (pedido, cardápio, retirada, entrada, saída). |
 
+## Previsão do pico (Entrega 2)
+
+Na aba **Pedidos**, a cantina vê quanto de cada item preparar para o **próximo intervalo**, somando
+os pedidos já agendados, e a hora de começar para ter tudo pronto quando o intervalo abrir.
+
+| Peça | Onde | Princípio |
+|---|---|---|
+| Interface `PrevisaoDeDemanda` | [`PrevisaoDeDemanda.ts`](../src/aplicacao/cantina/PrevisaoDeDemanda.ts) | **Inversão de Dependências:** a `TelaCantina` recebe só a interface e não sabe como a previsão é calculada. |
+| Implementação `PrevisaoPelosAgendados` | [`PrevisaoPelosAgendados.ts`](../src/aplicacao/cantina/PrevisaoPelosAgendados.ts) | **Aberto/Fechado:** outro jeito de prever (por exemplo, somar a média do balcão dos dias anteriores) é uma classe nova trocada em `main.ts`, sem tocar nas telas. |
+| `IntervaloDeAula` e `GradeDeIntervalos` | [`dominio/intervalo/`](../src/dominio/intervalo) | **Ocultamento de informação e coesão:** só o intervalo sabe se um horário cai dentro dele; a grade do campus é dado, em [`intervalosDoCesar.ts`](../src/infra/intervalosDoCesar.ts). |
+| Cartão na tela | [`htmlPrevisao.ts`](../src/ui/cantina/htmlPrevisao.ts) | **Responsabilidade Única:** o HTML fica no seu módulo, como as outras abas. |
+
+Testes em [`previsaoDoPico.test.ts`](../tests/previsaoDoPico.test.ts), com o mesmo `RelogioParado` dos outros testes.
+
 ## Módulos profundos
 
 Seguindo o artigo [Módulos profundos](https://engsoftmoderna.info/artigos/deep-modules.html): interface

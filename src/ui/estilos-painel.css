@@ -153,3 +153,10 @@
   .item-estoque { grid-template-columns: minmax(0, 1fr) 80px; }
   .item-estoque .selo-nivel { grid-column: 1 / -1; }
 }
+
+/* Previsão do pico: destaca o próximo intervalo e não se confunde com o "Para preparar". */
+.previsao { background: var(--branco); border: 2px solid var(--laranja); }
+.previsao .dica { margin: 0 0 10px; }
+.previsao .dica:last-child { margin: 10px 0 0; }
+.previsao .etiquetas li { background: var(--laranja-claro); }
+.previsao .etiquetas small { color: var(--tinta-suave); }
