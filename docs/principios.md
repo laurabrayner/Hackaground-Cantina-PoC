@@ -49,11 +49,25 @@ src/
 | **Substituição de Liskov** | As duas políticas cumprem o mesmo contrato, testado em [`produto.test.ts`](../tests/produto.test.ts) | Nenhuma lança "não suportado". `PreparoNaHora.liberar()` é um no-op legítimo. |
 | **Segregação de Interfaces** | `Reabastecivel` × `PoliticaDeDisponibilidade`; `Notificador` × `LeitorDeAvisos` em [`portas.ts`](../src/aplicacao/portas.ts); `RegistroDeVendas = Pick<EstoqueDaCantina, 'registrarVendaDoApp'>`; [`Tela`](../src/ui/Tela.ts) dividida em `ReageACliques`, `ReageAFormularios`, `ReageADigitacao` e `ReageAArquivos` | Quem é feito na hora não implementa `reabastecer()`. Quem só avisa não precisa ler avisos. O painel e o estudante dependem só do método que registra a venda. Cada tela implementa só a interação que tem: a do CESAR só tem formulário e não carrega métodos vazios. |
 | **Inversão de Dependências** | [`portas.ts`](../src/aplicacao/portas.ts) + [`main.ts`](../src/main.ts) | Casos de uso dependem de `RepositorioDePedidos`, `Sessao`, `Relogio`… nunca do navegador ou de `Date`. **Prova:** passamos de "tudo em memória" para "tudo no `localStorage`" mudando só `main.ts`. Os testes usam as versões em memória e um `RelogioParado`. |
-| **Aberto/Fechado** | [`NotificadorComposto`](../src/infra/notificadores.ts), [`restaurarPolitica`](../src/dominio/produto/restaurarPolitica.ts) | Um canal de aviso novo (som, WhatsApp, e-mail) é uma classe nova + uma linha em `main.ts`. Uma política de venda nova é uma classe com `paraDados`/`deDados` + uma linha no registro de políticas, sem `if` ou `switch`; o compilador acusa se a linha faltar. Cantina nova é **dado**, não código: o CESAR cria pela tela. |
+| **Aberto/Fechado** | [`NotificadorComposto`](../src/infra/notificadores.ts), [`restaurarPolitica`](../src/dominio/produto/restaurarPolitica.ts) | Um canal de aviso novo (som, WhatsApp, e-mail) é uma classe nova + uma linha em `main.ts`. **Prova:** o [`NotificadorDoNavegador`](../src/infra/NotificadorDoNavegador.ts) (notificação com som) entrou assim; o commit dele só cria esse arquivo e muda uma linha de `main.ts`. Uma política de venda nova é uma classe com `paraDados`/`deDados` + uma linha no registro de políticas, sem `if` ou `switch`; o compilador acusa se a linha faltar. Cantina nova é **dado**, não código: o CESAR cria pela tela. |
 | **Ocultamento de informação** | [`Pedido`](../src/dominio/pedido/Pedido.ts), [`Usuario`](../src/dominio/usuario/Usuario.ts), [`Cantina`](../src/dominio/cantina/Cantina.ts) | O status do pedido e as notas são privados e só mudam por métodos que validam a regra. A senha nunca sai de `Usuario` (só `confereSenha()`). As cores da cantina só mudam por `mudarCores()`. Até para restaurar do armazenamento quem mexe no estado é a própria classe (`deDados()`). |
 | **Responsabilidade Única / Coesão** | Um caso de uso por arquivo, agrupados por acesso; uma aba por módulo em [`ui/cantina/`](../src/ui/cantina) | `EstoqueDaCantina` cuida do estoque e do histórico de onde sai o Resumo, `ReporEstoque` só do pedido ao fornecedor, `PainelDaCantina` só da fila. A `TelaCantina` só guarda o estado e traduz cliques em casos de uso; o HTML de cada aba (Pedidos, Resumo, Estoque, Cardápio, Novo produto, Configurações) fica no seu módulo. |
 | **Demeter** | `Produto.nivelDeEstoque()`, `Produto.reposicaoNecessaria()`, `Produto.darBaixa()` | Ninguém escreve `produto.politica.algo()`: quem usa conversa só com `Produto`. |
 | **Integridade conceitual** | Vocabulário único em código, telas e diagrama | Os três acessos têm os mesmos nomes em todo lugar (`cesar`, `cantina`, `estudante`), e as classes usam as palavras da cantina (pedido, cardápio, retirada, entrada, saída). |
+
+## Previsão do pico (Entrega 2)
+
+Na aba **Pedidos**, a cantina vê quanto de cada item preparar para o **próximo intervalo**, somando
+os pedidos já agendados, e a hora de começar para ter tudo pronto quando o intervalo abrir.
+
+| Peça | Onde | Princípio |
+|---|---|---|
+| Interface `PrevisaoDeDemanda` | [`PrevisaoDeDemanda.ts`](../src/aplicacao/cantina/PrevisaoDeDemanda.ts) | **Inversão de Dependências:** a `TelaCantina` recebe só a interface e não sabe como a previsão é calculada. |
+| Implementação `PrevisaoPelosAgendados` | [`PrevisaoPelosAgendados.ts`](../src/aplicacao/cantina/PrevisaoPelosAgendados.ts) | **Aberto/Fechado:** outro jeito de prever (por exemplo, somar a média do balcão dos dias anteriores) é uma classe nova trocada em `main.ts`, sem tocar nas telas. |
+| `IntervaloDeAula` e `GradeDeIntervalos` | [`dominio/intervalo/`](../src/dominio/intervalo) | **Ocultamento de informação e coesão:** só o intervalo sabe se um horário cai dentro dele; a grade do campus é dado, em [`intervalosDoCesar.ts`](../src/infra/intervalosDoCesar.ts). |
+| Cartão na tela | [`htmlPrevisao.ts`](../src/ui/cantina/htmlPrevisao.ts) | **Responsabilidade Única:** o HTML fica no seu módulo, como as outras abas. |
+
+Testes em [`previsaoDoPico.test.ts`](../tests/previsaoDoPico.test.ts), com o mesmo `RelogioParado` dos outros testes.
 
 ## Módulos profundos
 

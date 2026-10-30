@@ -3,6 +3,7 @@ import type { ConfigurarCantina } from '../aplicacao/cantina/ConfigurarCantina';
 import type { EstoqueDaCantina, MotivoManual } from '../aplicacao/cantina/EstoqueDaCantina';
 import type { GerenciarCardapio } from '../aplicacao/cantina/GerenciarCardapio';
 import type { PainelDaCantina } from '../aplicacao/cantina/PainelDaCantina';
+import type { PrevisaoDeDemanda } from '../aplicacao/cantina/PrevisaoDeDemanda';
 import type { ReporEstoque } from '../aplicacao/cantina/ReporEstoque';
 import type { Relogio } from '../aplicacao/portas';
 import { CORES_PADRAO, type Cantina } from '../dominio/cantina/Cantina';
@@ -13,6 +14,7 @@ import { htmlConfiguracoes } from './cantina/htmlConfiguracoes';
 import { htmlEstoque, htmlFaixaDeAlerta } from './cantina/htmlEstoque';
 import { htmlNovoProduto, lerNovoProduto } from './cantina/htmlNovoProduto';
 import { htmlPedidos } from './cantina/htmlPedidos';
+import { htmlPrevisao } from './cantina/htmlPrevisao';
 import { htmlResumo } from './cantina/htmlResumo';
 import { escapar, htmlMensagem } from './formatacao';
 import { icone, type NomeDoIcone } from './icones';
@@ -28,6 +30,8 @@ export interface DependenciasDaCantina {
   readonly repor: ReporEstoque;
   readonly cadastrar: CadastrarProduto;
   readonly configurar: ConfigurarCantina;
+  /** Só a interface: a tela não sabe como a previsão é calculada. */
+  readonly previsao: PrevisaoDeDemanda;
   readonly relogio: Relogio;
 }
 
@@ -139,8 +143,11 @@ export class TelaCantina implements Tela, ReageACliques, ReageAFormularios, Reag
   private htmlDaAba(cantina: Cantina): string {
     const { usuario } = this.deps;
     switch (this.aba) {
-      case 'pedidos':
-        return htmlPedidos(this.deps.painel.fila(usuario), this.deps.painel.resumoDoQueFazer(usuario), this.deps.relogio.agora());
+      case 'pedidos': {
+        const agora = this.deps.relogio.agora();
+        return htmlPrevisao(this.deps.previsao.proximoIntervalo(usuario), agora)
+          + htmlPedidos(this.deps.painel.fila(usuario), this.deps.painel.resumoDoQueFazer(usuario), agora);
+      }
       case 'resumo':
         return htmlResumo(this.deps.estoque.resumo(usuario, this.periodo), this.periodo);
       case 'estoque':
@@ -191,6 +198,7 @@ function htmlAjuda(): string {
       <summary>Como funciona?</summary>
       <ul>
         <li><b>Pedidos:</b> chegam sozinhos, na ordem de começar a preparar. Toque em <b>Pronto</b> e o estudante é avisado.</li>
+        <li><b>Previsão do pico:</b> quanto de cada item preparar para o próximo intervalo, somando os pedidos agendados.</li>
         <li><b>Resumo:</b> vendas, entradas e saídas de hoje, da semana e do mês.</li>
         <li><b>Estoque:</b> avisa o que acabou ou está acabando. Registre aqui a venda no balcão, a perda e a mercadoria que chegou.</li>
         <li><b>Cardápio:</b> desligue só o que acabou e não volta hoje.</li>
