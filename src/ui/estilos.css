@@ -366,3 +366,31 @@ button:disabled { cursor: not-allowed; opacity: 0.3; }
   .cabecalho-cantina { flex-wrap: wrap; }
   .logo-cantina { width: 52px; height: 52px; }
 }
+
+/* ---------- Toque: alvos confortáveis onde o dedo é o ponteiro ---------- */
+
+@media (pointer: coarse), (max-width: 560px) {
+  button, .botao, label.botao { min-height: 44px; min-width: 44px; }
+  .botao-link { min-height: 44px; display: inline-flex; align-items: center; }
+  input:not([type='radio']):not([type='checkbox']):not([type='color']),
+  select, textarea { min-height: 44px; }
+  .escolha label { min-height: 44px; }
+  .escolha input[type='radio'] { width: 20px; height: 20px; }
+  .campo-quantidade input { width: 88px; }
+}
+
+/* No celular a linha do produto vira duas: nome em cima, preço e contador embaixo. */
+@media (max-width: 560px) {
+  .produto, .produto:has(.produto-foto) {
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas:
+      "foto info  info"
+      "foto preco contador";
+    row-gap: 8px;
+    align-items: center;
+  }
+  .produto-foto, .produto-foto-vazia { grid-area: foto; align-self: start; }
+  .produto-info { grid-area: info; }
+  .produto .preco { grid-area: preco; }
+  .produto .contador { grid-area: contador; justify-self: end; }
+}
