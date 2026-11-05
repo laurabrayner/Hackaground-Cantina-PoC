@@ -50,7 +50,7 @@ src/
 | **Segregação de Interfaces** | `Reabastecivel` × `PoliticaDeDisponibilidade`; `Notificador` × `LeitorDeAvisos` em [`portas.ts`](../src/aplicacao/portas.ts); `RegistroDeVendas = Pick<EstoqueDaCantina, 'registrarVendaDoApp'>`; [`Tela`](../src/ui/Tela.ts) dividida em `ReageACliques`, `ReageAFormularios`, `ReageADigitacao` e `ReageAArquivos` | Quem é feito na hora não implementa `reabastecer()`. Quem só avisa não precisa ler avisos. O painel e o estudante dependem só do método que registra a venda. Cada tela implementa só a interação que tem: a do CESAR só tem formulário e não carrega métodos vazios. |
 | **Inversão de Dependências** | [`portas.ts`](../src/aplicacao/portas.ts) + [`main.ts`](../src/main.ts) | Casos de uso dependem de `RepositorioDePedidos`, `Sessao`, `Relogio`… nunca do navegador ou de `Date`. **Prova:** passamos de "tudo em memória" para "tudo no `localStorage`" mudando só `main.ts`. Os testes usam as versões em memória e um `RelogioParado`. |
 | **Aberto/Fechado** | [`NotificadorComposto`](../src/infra/notificadores.ts), [`restaurarPolitica`](../src/dominio/produto/restaurarPolitica.ts) | Um canal de aviso novo (som, WhatsApp, e-mail) é uma classe nova + uma linha em `main.ts`. **Prova:** o [`NotificadorDoNavegador`](../src/infra/NotificadorDoNavegador.ts) (notificação com som) entrou assim; o commit dele só cria esse arquivo e muda uma linha de `main.ts`. Uma política de venda nova é uma classe com `paraDados`/`deDados` + uma linha no registro de políticas, sem `if` ou `switch`; o compilador acusa se a linha faltar. Cantina nova é **dado**, não código: o CESAR cria pela tela. |
-| **Ocultamento de informação** | [`Pedido`](../src/dominio/pedido/Pedido.ts), [`Usuario`](../src/dominio/usuario/Usuario.ts), [`Cantina`](../src/dominio/cantina/Cantina.ts) | O status do pedido e as notas são privados e só mudam por métodos que validam a regra. A senha nunca sai de `Usuario` (só `confereSenha()`). As cores da cantina só mudam por `mudarCores()`. Até para restaurar do armazenamento quem mexe no estado é a própria classe (`deDados()`). |
+| **Ocultamento de informação** | [`Pedido`](../src/dominio/pedido/Pedido.ts), [`Usuario`](../src/dominio/usuario/Usuario.ts), [`Cantina`](../src/dominio/cantina/Cantina.ts) | Em `Pedido`, **os três campos são privados**: status, notas e itens. Quem precisa decidir algo usa `estaAgendado()`, `estaPronto()`, `foiRetirado()`, `itensParaPreparar()` ou `estaTodoAvaliado()` — nenhuma comparação com string de status sobrou fora da classe. A senha nunca sai de `Usuario` (só `confereSenha()`). As cores da cantina só mudam por `mudarCores()`. Até para restaurar do armazenamento quem mexe no estado é a própria classe (`deDados()`). |
 | **Responsabilidade Única / Coesão** | Um caso de uso por arquivo, agrupados por acesso; uma aba por módulo em [`ui/cantina/`](../src/ui/cantina) | `EstoqueDaCantina` cuida do estoque e do histórico de onde sai o Resumo, `ReporEstoque` só do pedido ao fornecedor, `PainelDaCantina` só da fila. A `TelaCantina` só guarda o estado e traduz cliques em casos de uso; o HTML de cada aba (Pedidos, Resumo, Estoque, Cardápio, Novo produto, Configurações) fica no seu módulo. |
 | **Demeter** | `Produto.nivelDeEstoque()`, `Produto.reposicaoNecessaria()`, `Produto.darBaixa()` | Ninguém escreve `produto.politica.algo()`: quem usa conversa só com `Produto`. |
 | **Integridade conceitual** | Vocabulário único em código, telas e diagrama | Os três acessos têm os mesmos nomes em todo lugar (`cesar`, `cantina`, `estudante`), e as classes usam as palavras da cantina (pedido, cardápio, retirada, entrada, saída). |
@@ -92,6 +92,61 @@ pelo nome, como o `isEmpty()` do artigo.
 **Permissões nos casos de uso, não na tela** ([`autorizacao.ts`](../src/aplicacao/autorizacao.ts)): uma
 cantina não vê nem mexe nos pedidos e produtos de outra, um estudante não cancela nem avalia pedido
 alheio e só o CESAR cria cantinas. Os testes cobrem cada caso ([`casosDeUso.test.ts`](../tests/casosDeUso.test.ts)).
+
+## Métricas: go-horse × PoC
+
+Medido com parsers de verdade, não com `grep`: o módulo `ast` do Python para a versão
+go-horse ([`main.py`](https://github.com/laurabrayner/Hackaground-Cantina-PoC/blob/0b2f164/main.py),
+210 linhas) e a API do compilador TypeScript para a PoC. O script está em
+[`docs/metricas.mjs`](metricas.mjs) e roda com `node docs/metricas.mjs`.
+
+### A classe `Pedido`, nas duas versões
+
+| | go-horse | PoC |
+|---|---|---|
+| Métodos | 3 | 22 |
+| WMC (soma da complexidade) | 4 | 37 |
+| Campos | 3 | 3 |
+| **Campos públicos** | **3** | **0** |
+
+No go-horse, `Pedido` é um saco de dados: `itens` é uma lista pública e mutável, e qualquer
+parte do programa podia fazer `pedido.itens.append(...)` sem passar por nenhuma regra. Não havia
+status: o pedido não sabia dizer em que ponto estava.
+
+Na PoC os três campos são privados. O que entrou no lugar foram **métodos que revelam a
+intenção**: `estaAgendado()`, `estaPronto()`, `foiRetirado()`, `foiCancelado()`,
+`itensParaPreparar()` e `estaTodoAvaliado()`. O WMC subiu de 4 para 37 — e isso é o esperado:
+as regras que antes estavam espalhadas pelo programa agora moram dentro da classe que as
+conhece.
+
+### Onde a complexidade foi parar
+
+| | go-horse | PoC |
+|---|---|---|
+| Funções / métodos | 14 | 242 |
+| CC máxima | **14** (`executar_app`) | **13** (`App.ouvirEventos`) |
+| CC média | 2,43 | 1,93 |
+
+O número máximo quase não mudou, e seria desonesto vender isso como vitória. O que mudou foi
+**o que** é complexo.
+
+No go-horse, o pico de complexidade está em `executar_app()`: uma função solta de CC 14 que
+mistura menu, leitura do teclado, cálculo de fila, pagamento e montagem do pedido. É a regra de
+negócio que é complexa.
+
+Na PoC, o pico está em `App.ouvirEventos`, um roteador de eventos do navegador — código de
+borda, sem regra de negócio. Por camada:
+
+| Camada | Métodos | CC média | Pior caso |
+|---|---|---|---|
+| domínio | 83 | 1,59 | `Pedido.avaliarItem` (CC 6) |
+| aplicação | 58 | 1,76 | `EstoqueDaCantina.registrar` (CC 5) |
+| infraestrutura | 50 | 1,24 | `NotificadorDoNavegador.notificar` (CC 5) |
+| interface | 51 | 3,33 | `App.ouvirEventos` (CC 13) |
+
+O método mais complexo de todo o domínio tem CC 6. A complexidade que sobrou está concentrada
+na camada que lida com o navegador, que é onde ela incomoda menos: não é ali que estão as
+decisões que o negócio precisa acertar.
 
 ## Usabilidade (heurísticas de Nielsen)
 
