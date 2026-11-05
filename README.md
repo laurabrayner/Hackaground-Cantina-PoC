@@ -10,7 +10,8 @@ pedidos, estoque e cardápio, e o **estudante** pede e avalia o que comeu.
 ## Demonstração
 
 - **App online:** [cantinas-cesar.vercel.app](https://cantinas-cesar.vercel.app/)
-- **Vídeo:** [assistir no YouTube](https://youtu.be/hZ3JokP8Ya4)
+- **Vídeo (PoC final):** [assistir no YouTube](https://youtu.be/hZ3JokP8Ya4)
+- **Vídeo (versão go-horse):** [assistir no YouTube](https://www.youtube.com/watch?v=wusz4GiqDT0)
 
 ## Tecnologias
 
