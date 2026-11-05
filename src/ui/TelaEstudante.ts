@@ -77,7 +77,7 @@ export class TelaEstudante implements Tela, ReageACliques, ReageAFormularios, Re
       this.deps.pedidos.avaliarItem(usuario, numero, elemento.dataset.produto ?? '', Number(elemento.dataset.nota));
       // Avaliação completa: o pedido vai para o histórico, então confirmamos aqui em cima.
       const pedido = this.meusPedidos().find((p) => p.numero === numero);
-      if (pedido?.itens.every((item) => pedido.notaDoItem(item.produtoId))) {
+      if (pedido?.estaTodoAvaliado()) {
         this.mensagem = { tipo: 'sucesso', texto: `Obrigado! Sua avaliação do pedido #${numero} ajuda os colegas e a cantina.` };
       }
     }
@@ -159,7 +159,7 @@ export class TelaEstudante implements Tela, ReageACliques, ReageAFormularios, Re
     const produtos = new Map(this.deps.cantinas.cardapioDoDia(pedido.cantinaId).map((p) => [p.id, p]));
     this.carrinho.clear();
     const faltando: string[] = [];
-    for (const item of pedido.itens) {
+    for (const item of pedido.itensParaListar()) {
       if (produtos.get(item.produtoId)?.estaDisponivel(item.quantidade)) this.carrinho.set(item.produtoId, item.quantidade);
       else faltando.push(item.nome);
     }
@@ -182,7 +182,7 @@ export class TelaEstudante implements Tela, ReageACliques, ReageAFormularios, Re
   private htmlAvisos(): string {
     const avisos = this.deps.avisos.avisosPara(this.deps.usuario.id);
     return this.meusPedidos()
-      .filter((pedido) => pedido.status === 'pronto')
+      .filter((pedido) => pedido.estaPronto())
       .map((pedido) => {
         const aviso = avisos.find((a) => a.numeroDoPedido === pedido.numero);
         return `
@@ -216,7 +216,7 @@ export class TelaEstudante implements Tela, ReageACliques, ReageAFormularios, Re
     const pedidos = this.meusPedidos();
     if (pedidos.length === 0) return '';
     const emAndamento = pedidos.filter((p) => p.estaNaFila());
-    const paraAvaliar = pedidos.filter((p) => p.status === 'retirado' && p.itens.some((i) => !p.notaDoItem(i.produtoId)));
+    const paraAvaliar = pedidos.filter((p) => p.foiRetirado() && !p.estaTodoAvaliado());
     const anteriores = pedidos.filter((p) => !emAndamento.includes(p) && !paraAvaliar.includes(p));
     const nomes = new Map(this.deps.cantinas.vitrine().map(({ cantina }) => [cantina.id, cantina.nome]));
     const linhas = (lista: Pedido[]) => lista.map((pedido) => this.htmlMeuPedido(pedido, nomes.get(pedido.cantinaId) ?? '')).join('');
@@ -236,27 +236,27 @@ export class TelaEstudante implements Tela, ReageACliques, ReageAFormularios, Re
         <div class="meu-pedido-linha">
           <div>
             <strong>#${pedido.numero} · ${escapar(nomeDaCantina)} · ${pedido.horarioDeRetirada}</strong>
-            <small>${pedido.itens.map((item) => `${item.quantidade}× ${escapar(item.nome)}`).join(', ')}</small>
+            <small>${pedido.itensParaListar().map((item) => `${item.quantidade}× ${escapar(item.nome)}`).join(', ')}</small>
           </div>
           <span class="selo selo-${pedido.status}">${ROTULO_DO_STATUS[pedido.status]}</span>
           ${this.htmlAcaoDoPedido(pedido)}
         </div>
-        ${pedido.status === 'retirado' ? this.htmlAvaliacao(pedido) : ''}
+        ${pedido.foiRetirado() ? this.htmlAvaliacao(pedido) : ''}
       </li>`;
   }
 
   private htmlAcaoDoPedido(pedido: Pedido): string {
-    if (pedido.status === 'agendado') {
+    if (pedido.estaAgendado()) {
       return `<button class="botao-link" data-acao="cancelar" data-numero="${pedido.numero}">Cancelar</button>`;
     }
-    if (pedido.status === 'pronto') return '';
+    if (pedido.estaPronto()) return '';
     return `<button class="botao-link" data-acao="repetir" data-numero="${pedido.numero}">Pedir de novo</button>`;
   }
 
   /** Uma linha de estrelas por item: cada coisa do pedido recebe a sua nota. */
   private htmlAvaliacao(pedido: Pedido): string {
-    const completa = pedido.itens.every((item) => pedido.notaDoItem(item.produtoId));
-    const linhas = pedido.itens.map((item) => {
+    const completa = pedido.itensParaListar().every((item) => pedido.notaDoItem(item.produtoId));
+    const linhas = pedido.itensParaListar().map((item) => {
       const nota = pedido.notaDoItem(item.produtoId);
       const estrelas = NOTAS.map(
         (n) => `

@@ -19,9 +19,9 @@ export function htmlPedidos(fila: readonly Pedido[], resumo: readonly ItemParaPr
 }
 
 function htmlPedido(pedido: Pedido, agora: Horario): string {
-  const urgente = pedido.status === 'agendado' && !agora.ehAntesDe(pedido.horarioParaComecar());
+  const urgente = pedido.estaAgendado() && !agora.ehAntesDe(pedido.horarioParaComecar());
   const acao =
-    pedido.status === 'agendado'
+    pedido.estaAgendado()
       ? `<small class="${urgente ? 'texto-urgente' : ''}">${urgente ? `${icone('relogio')}Começar agora` : `Começar às ${pedido.horarioParaComecar()}`}</small>
          <button class="botao botao-pronto" data-acao="pronto" data-numero="${pedido.numero}">${icone('confirmar')}Pronto</button>`
       : `<small>${icone('sino')}Aviso enviado para ${escapar(pedido.cliente)}</small>
@@ -36,7 +36,7 @@ function htmlPedido(pedido: Pedido, agora: Horario): string {
         <strong>${escapar(pedido.cliente)}</strong>
         <span class="retirada">retira ${pedido.horarioDeRetirada}</span>
       </header>
-      <ul class="itens">${pedido.itens.map((i) => `<li>${i.quantidade}× ${escapar(i.nome)}</li>`).join('')}</ul>
+      <ul class="itens">${pedido.itensParaListar().map((i) => `<li>${i.quantidade}× ${escapar(i.nome)}</li>`).join('')}</ul>
       <p class="receber">Receber <b>${formatarPreco(pedido.totalEmCentavos())}</b></p>
       <footer>${acao}</footer>
     </article>`;

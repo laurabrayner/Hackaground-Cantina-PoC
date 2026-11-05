@@ -89,7 +89,7 @@ export class EstoqueDaCantina {
    */
   registrarVendaDoApp(pedido: Pedido): void {
     const momento = this.relogio.instante();
-    for (const item of pedido.itens) {
+    for (const item of pedido.itensParaListar()) {
       this.movimentacoes.registrar(novaMovimentacao({
         cantinaId: pedido.cantinaId,
         produtoId: item.produtoId,

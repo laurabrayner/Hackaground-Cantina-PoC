@@ -35,7 +35,7 @@ const NOTA_MAXIMA = 5;
 export class Pedido {
   private _status: StatusPedido = 'agendado';
   private readonly notas = new Map<string, number>();
-  readonly itens: readonly ItemPedido[];
+  private readonly _itens: readonly ItemPedido[];
 
   constructor(
     readonly numero: number,
@@ -48,7 +48,7 @@ export class Pedido {
   ) {
     if (!clienteId || !cliente.trim()) throw new ErroDeDominio('Entre na sua conta para fazer o pedido.');
     if (itens.length === 0) throw new ErroDeDominio('O pedido está vazio.');
-    this.itens = Object.freeze([...itens]);
+    this._itens = Object.freeze([...itens]);
   }
 
   get status(): StatusPedido {
@@ -57,16 +57,47 @@ export class Pedido {
 
   /** Ainda precisa de atenção da cantina (preparar ou entregar). */
   estaNaFila(): boolean {
-    return this._status === 'agendado' || this._status === 'pronto';
+    return this.estaAgendado() || this.estaPronto();
+  }
+
+  estaAgendado(): boolean {
+    return this._status === 'agendado';
+  }
+
+  estaPronto(): boolean {
+    return this._status === 'pronto';
+  }
+
+  foiRetirado(): boolean {
+    return this._status === 'retirado';
+  }
+
+  foiCancelado(): boolean {
+    return this._status === 'cancelado';
+  }
+
+  /** Itens só para exibir ou devolver ao estoque: quem decide algo usa os métodos abaixo. */
+  itensParaListar(): readonly ItemPedido[] {
+    return this._itens;
+  }
+
+  /** Só o que a cantina precisa cozinhar; pronta-entrega não entra na conta do preparo. */
+  itensParaPreparar(): readonly ItemPedido[] {
+    return this._itens.filter((item) => item.tempoDePreparoMin > 0);
+  }
+
+  /** O estudante já deu nota para tudo que levou. */
+  estaTodoAvaliado(): boolean {
+    return this._itens.every((item) => this.notas.has(item.produtoId));
   }
 
   totalEmCentavos(): number {
-    return this.itens.reduce((soma, item) => soma + item.precoUnitarioEmCentavos * item.quantidade, 0);
+    return this._itens.reduce((soma, item) => soma + item.precoUnitarioEmCentavos * item.quantidade, 0);
   }
 
   /** Itens feitos na hora são preparados um depois do outro. */
   tempoDePreparoMin(): number {
-    return this.itens.reduce((soma, item) => soma + item.tempoDePreparoMin * item.quantidade, 0);
+    return this._itens.reduce((soma, item) => soma + item.tempoDePreparoMin * item.quantidade, 0);
   }
 
   /** Hora em que a cantina deve começar, para ficar pronto exatamente na retirada. */
@@ -99,7 +130,7 @@ export class Pedido {
   /** Cada item recebe a própria nota (1 a 5). Dá para mudar de ideia: a última nota vale. */
   avaliarItem(produtoId: string, nota: number): void {
     if (this._status !== 'retirado') throw new ErroDeDominio('Você pode avaliar depois de retirar o pedido.');
-    if (!this.itens.some((item) => item.produtoId === produtoId)) throw new ErroDeDominio('Esse item não está no pedido.');
+    if (!this._itens.some((item) => item.produtoId === produtoId)) throw new ErroDeDominio('Esse item não está no pedido.');
     if (!Number.isInteger(nota) || nota < NOTA_MINIMA || nota > NOTA_MAXIMA) {
       throw new ErroDeDominio(`A nota vai de ${NOTA_MINIMA} a ${NOTA_MAXIMA}.`);
     }
@@ -121,7 +152,7 @@ export class Pedido {
       cantinaId: this.cantinaId,
       clienteId: this.clienteId,
       cliente: this.cliente,
-      itens: this.itens,
+      itens: this._itens,
       horarioDeRetirada: this.horarioDeRetirada.toString(),
       status: this._status,
       notas: Object.fromEntries(this.notas),

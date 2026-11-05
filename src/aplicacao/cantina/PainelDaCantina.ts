@@ -31,8 +31,8 @@ export class PainelDaCantina {
   /** Soma o que ainda falta preparar, para fazer em lote ("5 tapiocas, 3 coxinhas"). */
   resumoDoQueFazer(quem: Usuario): ItemParaPreparar[] {
     const totais = new Map<string, number>();
-    for (const pedido of this.daCantina(quem).filter((p) => p.status === 'agendado')) {
-      for (const item of pedido.itens.filter((i) => i.tempoDePreparoMin > 0)) {
+    for (const pedido of this.daCantina(quem).filter((p) => p.estaAgendado())) {
+      for (const item of pedido.itensParaPreparar()) {
         totais.set(item.nome, (totais.get(item.nome) ?? 0) + item.quantidade);
       }
     }

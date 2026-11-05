@@ -32,7 +32,7 @@ export class PedidosDoEstudante {
   cancelar(quem: Usuario, numero: number): void {
     const pedido = this.meu(quem, numero);
     pedido.cancelar();
-    for (const item of pedido.itens) {
+    for (const item of pedido.itensParaListar()) {
       const produto = this.produtos.buscarPorId(item.produtoId);
       if (!produto) continue;
       produto.liberar(item.quantidade);

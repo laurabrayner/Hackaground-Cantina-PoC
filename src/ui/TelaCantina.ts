@@ -173,7 +173,7 @@ export class TelaCantina implements Tela, ReageACliques, ReageAFormularios, Reag
   }
 
   private htmlAbas(alertasDeEstoque: number): string {
-    const aguardando = this.deps.painel.fila(this.deps.usuario).filter((p) => p.status === 'agendado').length;
+    const aguardando = this.deps.painel.fila(this.deps.usuario).filter((p) => p.estaAgendado()).length;
     const abas: [Aba, string, NomeDoIcone | null, number][] = [
       ['pedidos', 'Pedidos', null, aguardando],
       ['resumo', 'Resumo', 'grafico', 0],

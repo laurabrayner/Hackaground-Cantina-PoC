@@ -30,7 +30,7 @@ export class VisaoGeralDasCantinas {
         cantina,
         produtosNoCardapio: todosOsProdutos.filter((p) => p.cantinaId === cantina.id && p.estaNoCardapio).length,
         pedidosNaFila: pedidos.filter((p) => p.estaNaFila()).length,
-        pedidosEntregues: pedidos.filter((p) => p.status === 'retirado').length,
+        pedidosEntregues: pedidos.filter((p) => p.foiRetirado()).length,
         avaliacao: mediaGeral(resumirAvaliacoes(pedidos).values()),
       };
     });

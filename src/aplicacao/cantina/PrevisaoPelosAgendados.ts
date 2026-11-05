@@ -37,13 +37,13 @@ export class PrevisaoPelosAgendados implements PrevisaoDeDemanda {
   private agendadosNoIntervalo(cantinaId: string, intervalo: IntervaloDeAula): Pedido[] {
     return this.pedidos
       .listar()
-      .filter((p) => p.cantinaId === cantinaId && p.status === 'agendado' && intervalo.inclui(p.horarioDeRetirada));
+      .filter((p) => p.cantinaId === cantinaId && p.estaAgendado() && intervalo.inclui(p.horarioDeRetirada));
   }
 }
 
 function somarItens(pedidos: readonly Pedido[]): ItemPrevisto[] {
   const totais = new Map<string, ItemPrevisto>();
-  for (const { produtoId, nome, quantidade, tempoDePreparoMin } of pedidos.flatMap((p) => p.itens)) {
+  for (const { produtoId, nome, quantidade, tempoDePreparoMin } of pedidos.flatMap((p) => p.itensParaListar())) {
     const anterior = totais.get(produtoId)?.quantidade ?? 0;
     totais.set(produtoId, { produtoId, nome, quantidade: anterior + quantidade, feitoNaHora: tempoDePreparoMin > 0 });
   }
