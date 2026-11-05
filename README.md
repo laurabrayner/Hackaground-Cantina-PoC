@@ -60,8 +60,8 @@ Baixe a versão **LTS** em [nodejs.org](https://nodejs.org/) e instale.
 ### 2. Baixar o projeto
 
 ```bash
-git clone https://github.com/luan-arruda/Hackground-Rel-mpago.git
-cd Hackground-Rel-mpago
+git clone https://github.com/laurabrayner/Hackaground-Cantina-PoC.git
+cd Hackaground-Cantina-PoC
 ```
 
 ### 3. Instalar as dependências
